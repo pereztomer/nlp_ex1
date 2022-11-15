@@ -47,11 +47,15 @@ class FeatureStatistics:
                     else:
                         self.feature_rep_dict["f100"][(cur_word, cur_tag)] += 1
 
-                    if cur_word.endswith('ing') and cur_tag == 'VBG':
-                        if (cur_word, cur_tag) not in self.feature_rep_dict["f101"]:
-                            self.feature_rep_dict["f101"][(cur_word, cur_tag)] = 1
+                    # f101
+                    suffixes = [cur_word[-num:] for num in range(1,min(4,len(cur_word))+1)]
+                    for s in suffixes:
+                        if (s, cur_tag) not in self.feature_rep_dict["f101"]:
+                            self.feature_rep_dict["f101"][(s, cur_tag)] = 1
                         else:
-                            self.feature_rep_dict["f101"][(cur_word, cur_tag)] = +1
+                            self.feature_rep_dict["f101"][(s, cur_tag)] = +1
+
+                    # f102
 
                 sentence = [("*", "*"), ("*", "*")]
                 for pair in split_words:
@@ -149,6 +153,9 @@ def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[
     if (c_word, c_tag) in dict_of_dicts["f100"]:
         features.append(dict_of_dicts["f100"][(c_word, c_tag)])
 
+    # f101
+    if (c_word, c_tag) in dict_of_dicts["f101"]:
+        features.append(dict_of_dicts["f101"][(c_word, c_tag)])
     return features
 
 
