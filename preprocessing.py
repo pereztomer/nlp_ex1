@@ -3,7 +3,6 @@ from collections import OrderedDict, defaultdict
 import numpy as np
 from typing import List, Dict, Tuple
 
-
 WORD = 0
 TAG = 1
 
@@ -13,7 +12,7 @@ class FeatureStatistics:
         self.n_total_features = 0  # Total number of features accumulated
 
         # Init all features dictionaries
-        feature_dict_list = ["f100", "f101", "f102"]  # the feature classes used in the code
+        feature_dict_list = ["f100", "f101", "f102", "f103", "f104"]  # the feature classes used in the code
         self.feature_rep_dict = {fd: OrderedDict() for fd in feature_dict_list}
         '''
         A dictionary containing the counts of each data regarding a feature class. For example in f100, would contain
@@ -48,7 +47,7 @@ class FeatureStatistics:
                         self.feature_rep_dict["f100"][(cur_word, cur_tag)] += 1
 
                     # f101
-                    suffixes = [cur_word[-num:] for num in range(1,min(4,len(cur_word))+1)]
+                    suffixes = [cur_word[-num:] for num in range(1, min(4, len(cur_word)) + 1)]
                     for s in suffixes:
                         if (s, cur_tag) not in self.feature_rep_dict["f101"]:
                             self.feature_rep_dict["f101"][(s, cur_tag)] = 1
@@ -62,6 +61,36 @@ class FeatureStatistics:
                             self.feature_rep_dict["f102"][(p, cur_tag)] = 1
                         else:
                             self.feature_rep_dict["f102"][(p, cur_tag)] = +1
+
+                    # f103
+                    if word_idx == 0:
+                        t_minus_2, t_minus_1 = '*', '*'
+                        _, t = split_words[word_idx].split('_')
+                    elif word_idx == 1:
+                        t_minus_2 = '*'
+                        _, t_minus_1 = split_words[word_idx - 1].split('_')
+                        _, t = split_words[word_idx].split('_')
+                    elif word_idx >= 2:
+                        _, t = split_words[word_idx].split('_')
+                        _, t_minus_1 = split_words[word_idx - 1].split('_')
+                        _, t_minus_2 = split_words[word_idx - 2].split('_')
+
+                    if (t, t_minus_1, t_minus_2) not in self.feature_rep_dict["f103"]:
+                        self.feature_rep_dict["f103"][(t, t_minus_1, t_minus_2)] = 1
+                    else:
+                        self.feature_rep_dict["f103"][(t, t_minus_1, t_minus_2)] = +1
+
+                    # f104
+                    if word_idx == 0:
+                        t_minus_1 = '*'
+                        _, t = split_words[word_idx].split('_')
+                    elif word_idx >= 1:
+                        _, t_minus_1 = split_words[word_idx - 1].split('_')
+                        _, t = split_words[word_idx].split('_')
+                    if (t, t_minus_1) not in self.feature_rep_dict["f104"]:
+                        self.feature_rep_dict["f104"][(t, t_minus_1)] = 1
+                    else:
+                        self.feature_rep_dict["f104"][(t, t_minus_1)] = +1
 
                 sentence = [("*", "*"), ("*", "*")]
                 for pair in split_words:
@@ -92,6 +121,8 @@ class Feature2id:
             "f100": OrderedDict(),
             "f101": OrderedDict(),
             "f102": OrderedDict(),
+            "f103": OrderedDict(),
+            "f104": OrderedDict(),
         }
         self.represent_input_with_features = OrderedDict()
         self.histories_matrix = OrderedDict()
@@ -144,7 +175,7 @@ class Feature2id:
                 self.feature_statistics.histories), self.n_total_features), dtype=bool)
 
 
-def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[Tuple[str, str], int]])\
+def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[Tuple[str, str], int]]) \
         -> List[int]:
     """
         Extract feature vector in per a given history
@@ -156,6 +187,7 @@ def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[
     c_tag = history[1]
     features = []
 
+    c_word, c_tag, p_word, p_tag, pp_word, pp_tag, n_word = history
     # f100
     if (c_word, c_tag) in dict_of_dicts["f100"]:
         features.append(dict_of_dicts["f100"][(c_word, c_tag)])
@@ -171,6 +203,14 @@ def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[
         prefixes = [c_word[:num] for num in range(1, min(4, len(c_word)) + 1)]
         for p in prefixes:
             features.append(dict_of_dicts["f102"][(p, c_tag)])
+
+    # f103
+    if (c_tag, p_tag, pp_tag) in dict_of_dicts["f103"]:
+        features.append(dict_of_dicts["f103"][(c_tag, p_tag, pp_tag)])
+    # f104
+    if (c_tag, p_tag) in dict_of_dicts["f104"]:
+        features.append(dict_of_dicts["f104"][(c_tag, p_tag)])
+
     return features
 
 
