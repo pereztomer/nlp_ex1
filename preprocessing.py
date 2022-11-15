@@ -13,7 +13,7 @@ class FeatureStatistics:
         self.n_total_features = 0  # Total number of features accumulated
 
         # Init all features dictionaries
-        feature_dict_list = ["f100"]  # the feature classes used in the code
+        feature_dict_list = ["f100", "f101"]  # the feature classes used in the code
         self.feature_rep_dict = {fd: OrderedDict() for fd in feature_dict_list}
         '''
         A dictionary containing the counts of each data regarding a feature class. For example in f100, would contain
@@ -46,6 +46,12 @@ class FeatureStatistics:
                         self.feature_rep_dict["f100"][(cur_word, cur_tag)] = 1
                     else:
                         self.feature_rep_dict["f100"][(cur_word, cur_tag)] += 1
+
+                    if cur_word.endswith('ing') and cur_tag == 'VBG':
+                        if (cur_word, cur_tag) not in self.feature_rep_dict["f101"]:
+                            self.feature_rep_dict["f101"][(cur_word, cur_tag)] = 1
+                        else:
+                            self.feature_rep_dict["f101"][(cur_word, cur_tag)] = +1
 
                 sentence = [("*", "*"), ("*", "*")]
                 for pair in split_words:
