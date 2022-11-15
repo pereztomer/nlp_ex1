@@ -12,7 +12,7 @@ class FeatureStatistics:
         self.n_total_features = 0  # Total number of features accumulated
 
         # Init all features dictionaries
-        feature_dict_list = ["f100", "f101", "f102", "f103", "f104", "f105"]  # the feature classes used in the code
+        feature_dict_list = ["f100", "f101", "f102", "f103", "f104", "f105", "f106", "f107"]  # the feature classes used in the code
         self.feature_rep_dict = {fd: OrderedDict() for fd in feature_dict_list}
         '''
         A dictionary containing the counts of each data regarding a feature class. For example in f100, would contain
@@ -98,6 +98,28 @@ class FeatureStatistics:
                     else:
                         self.feature_rep_dict["f105"][cur_tag] = +1
 
+
+                    # f106
+                    if word_idx==0:
+                        w_minus_1 = '*'
+                    elif word_idx>=1:
+                        w_minus_1, _ = split_words[word_idx-1].split('_')
+                    if (cur_tag,w_minus_1) not in self.feature_rep_dict["f106"]:
+                        self.feature_rep_dict["f106"][(cur_tag,w_minus_1)] = 1
+                    else:
+                        self.feature_rep_dict["f106"][(cur_tag,w_minus_1)] = +1
+
+
+                    # f107
+                    if word_idx == len(split_words) - 1:
+                        w_plus_1 = '*'
+                    else:
+                        w_plus_1, _ = split_words[word_idx + 1].split('_')
+                    if (w_plus_1, cur_tag) not in self.feature_rep_dict["f107"]:
+                        self.feature_rep_dict["f107"][(w_plus_1, cur_tag)] = 1
+                    else:
+                        self.feature_rep_dict["f107"][(w_plus_1, cur_tag)] = +1
+
                 sentence = [("*", "*"), ("*", "*")]
                 for pair in split_words:
                     sentence.append(tuple(pair.split("_")))
@@ -130,6 +152,8 @@ class Feature2id:
             "f103": OrderedDict(),
             "f104": OrderedDict(),
             "f105": OrderedDict(),
+            "f106": OrderedDict(),
+            "f107": OrderedDict(),
         }
         self.represent_input_with_features = OrderedDict()
         self.histories_matrix = OrderedDict()
@@ -222,6 +246,10 @@ def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[
     # f105
     if c_tag in dict_of_dicts["f105"]:
         features.append(dict_of_dicts["f105"][c_tag])
+
+    # f106
+    if (c_tag, p_word) in dict_of_dicts["f106"]:
+        features.append(dict_of_dicts["f106"][(c_tag, p_word)])
 
     return features
 
