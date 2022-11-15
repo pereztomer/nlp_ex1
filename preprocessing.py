@@ -12,7 +12,7 @@ class FeatureStatistics:
         self.n_total_features = 0  # Total number of features accumulated
 
         # Init all features dictionaries
-        feature_dict_list = ["f100", "f101", "f102", "f103", "f104"]  # the feature classes used in the code
+        feature_dict_list = ["f100", "f101", "f102", "f103", "f104", "f105"]  # the feature classes used in the code
         self.feature_rep_dict = {fd: OrderedDict() for fd in feature_dict_list}
         '''
         A dictionary containing the counts of each data regarding a feature class. For example in f100, would contain
@@ -92,6 +92,12 @@ class FeatureStatistics:
                     else:
                         self.feature_rep_dict["f104"][(t, t_minus_1)] = +1
 
+                    # f105
+                    if cur_tag not in self.feature_rep_dict["f105"]:
+                        self.feature_rep_dict["f105"][cur_tag] = 1
+                    else:
+                        self.feature_rep_dict["f105"][cur_tag] = +1
+
                 sentence = [("*", "*"), ("*", "*")]
                 for pair in split_words:
                     sentence.append(tuple(pair.split("_")))
@@ -123,6 +129,7 @@ class Feature2id:
             "f102": OrderedDict(),
             "f103": OrderedDict(),
             "f104": OrderedDict(),
+            "f105": OrderedDict(),
         }
         self.represent_input_with_features = OrderedDict()
         self.histories_matrix = OrderedDict()
@@ -207,9 +214,14 @@ def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[
     # f103
     if (c_tag, p_tag, pp_tag) in dict_of_dicts["f103"]:
         features.append(dict_of_dicts["f103"][(c_tag, p_tag, pp_tag)])
+
     # f104
     if (c_tag, p_tag) in dict_of_dicts["f104"]:
         features.append(dict_of_dicts["f104"][(c_tag, p_tag)])
+
+    # f105
+    if (c_tag) in dict_of_dicts["f105"]:
+        features.append(dict_of_dicts["f105"][(c_tag)])
 
     return features
 
