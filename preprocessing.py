@@ -13,7 +13,7 @@ class FeatureStatistics:
         self.n_total_features = 0  # Total number of features accumulated
 
         # Init all features dictionaries
-        feature_dict_list = ["f100", "f101"]  # the feature classes used in the code
+        feature_dict_list = ["f100", "f101", "f102"]  # the feature classes used in the code
         self.feature_rep_dict = {fd: OrderedDict() for fd in feature_dict_list}
         '''
         A dictionary containing the counts of each data regarding a feature class. For example in f100, would contain
@@ -56,6 +56,12 @@ class FeatureStatistics:
                             self.feature_rep_dict["f101"][(s, cur_tag)] = +1
 
                     # f102
+                    prefixes = [cur_word[:num] for num in range(1, min(4, len(cur_word)) + 1)]
+                    for p in prefixes:
+                        if (p, cur_tag) not in self.feature_rep_dict["f102"]:
+                            self.feature_rep_dict["f102"][(p, cur_tag)] = 1
+                        else:
+                            self.feature_rep_dict["f102"][(p, cur_tag)] = +1
 
                 sentence = [("*", "*"), ("*", "*")]
                 for pair in split_words:
@@ -85,6 +91,7 @@ class Feature2id:
         self.feature_to_idx = {
             "f100": OrderedDict(),
             "f101": OrderedDict(),
+            "f102": OrderedDict(),
         }
         self.represent_input_with_features = OrderedDict()
         self.histories_matrix = OrderedDict()
@@ -155,7 +162,15 @@ def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[
 
     # f101
     if (c_word, c_tag) in dict_of_dicts["f101"]:
-        features.append(dict_of_dicts["f101"][(c_word, c_tag)])
+        suffixes = [c_word[-num:] for num in range(1, min(4, len(c_word)) + 1)]
+        for s in suffixes:
+            features.append(dict_of_dicts["f101"][(s, c_tag)])
+
+    # f102
+    if (c_word, c_tag) in dict_of_dicts["f102"]:
+        prefixes = [c_word[:num] for num in range(1, min(4, len(c_word)) + 1)]
+        for p in prefixes:
+            features.append(dict_of_dicts["f102"][(p, c_tag)])
     return features
 
 
