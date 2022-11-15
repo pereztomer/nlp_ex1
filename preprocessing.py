@@ -220,8 +220,8 @@ def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[
         features.append(dict_of_dicts["f104"][(c_tag, p_tag)])
 
     # f105
-    if (c_tag) in dict_of_dicts["f105"]:
-        features.append(dict_of_dicts["f105"][(c_tag)])
+    if c_tag in dict_of_dicts["f105"]:
+        features.append(dict_of_dicts["f105"][c_tag])
 
     return features
 
