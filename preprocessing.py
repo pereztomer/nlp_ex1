@@ -53,7 +53,7 @@ class FeatureStatistics:
 
                     # count tag pairs:
                     if word_idx > 0:
-                        _, prev_tag = split_words[word_idx - 1]
+                        _, prev_tag = split_words[word_idx - 1].split('_')
                     else:
                         prev_tag = '*'
                     if str([prev_tag, cur_tag]) not in self.tags_pairs_count:
@@ -67,18 +67,16 @@ class FeatureStatistics:
                         prev_tag = '*'
                     elif word_idx == 1:
                         prev_prev_tag = '*'
-                        _, prev_tag = split_words[word_idx - 1]
+                        _, prev_tag = split_words[word_idx - 1].split('_')
                     else:
-                        _, prev_prev_tag = split_words[word_idx - 2]
-                        _, prev_tag = split_words[word_idx - 1]
+                        _, prev_prev_tag = split_words[word_idx - 2].split('_')
+                        _, prev_tag = split_words[word_idx - 1].split('_')
 
                     if str([prev_prev_tag, prev_tag, cur_tag]) not in self.tags_triplets_count:
                         self.tags_triplets_count[str([prev_prev_tag, prev_tag, cur_tag])] = 1
                     else:
                         self.tags_triplets_count[str([prev_prev_tag, prev_tag, cur_tag])] += 1
 
-
-                    
                     if (cur_word, cur_tag) not in self.feature_rep_dict["f100"]:
                         self.feature_rep_dict["f100"][(cur_word, cur_tag)] = 1
                     else:
