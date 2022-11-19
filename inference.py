@@ -2,7 +2,7 @@ from preprocessing import read_test
 from tqdm import tqdm
 
 
-def calculate_q():
+def calculate_q(feature2id):
     """
     A helper function for the memm_viterbi() function, which
     calculates the q parameter in every memm_viterbi() iteration.
@@ -38,7 +38,7 @@ def memm_viterbi(sentence, pre_trained_weights, feature2id):
                 max_val = 0
                 argmax_tag = None
                 for t in S_dict[index - 2]:
-                    q = calculate_q()
+                    q = calculate_q(feature2id)
                     # triplet_count = feature2id.feature_statistics.tags_triplets_count[str([t, u, v])]
                     # pairs_count = feature2id.feature_statistics.tags_pairs_count[str([u, v])]
                     # q = triplet_count / pairs_count
@@ -61,7 +61,7 @@ def memm_viterbi(sentence, pre_trained_weights, feature2id):
             # triplet_count = feature2id.feature_statistics.tags_triplets_count[str([u, v, '*'])]
             # pairs_count = feature2id.feature_statistics.tags_pairs_count[str([u, v])]
             # q = triplet_count / pairs_count
-            q = calculate_q()
+            q = calculate_q(feature2id)
             if max_val > the_big_pi_table[n][str([u, v])] * q:
                 max_val = the_big_pi_table[n][str([u, v])] * q
                 t_assignments[n - 1] = u
