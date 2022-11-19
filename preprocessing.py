@@ -12,7 +12,8 @@ class FeatureStatistics:
         self.n_total_features = 0  # Total number of features accumulated
 
         # Init all features dictionaries
-        feature_dict_list = ["f100", "f101", "f102", "f103", "f104", "f105", "f106", "f107"]  # the feature classes used in the code
+        feature_dict_list = ["f100", "f101", "f102", "f103", "f104", "f105", "f106", "f107", "fdigits",
+                             "fcapital"]  # the feature classes used in the code
         self.feature_rep_dict = {fd: OrderedDict() for fd in feature_dict_list}
         '''
         A dictionary containing the counts of each data regarding a feature class. For example in f100, would contain
@@ -23,6 +24,9 @@ class FeatureStatistics:
         self.tags_counts = defaultdict(int)  # a dictionary with the number of times each tag appeared in the text
         self.words_count = defaultdict(int)  # a dictionary with the number of times each word appeared in the text
         self.histories = []  # a list of all the histories seen at the test
+        self.word_tag_counts = {}
+        self.tags_pairs_count = {}
+        self.tags_triplets_count = {}
 
     def get_word_tag_pair_count(self, file_path) -> None:
         """
@@ -41,6 +45,40 @@ class FeatureStatistics:
                     self.tags_counts[cur_tag] += 1
                     self.words_count[cur_word] += 1
 
+                    # counters for viterbi:
+                    if (cur_word, cur_tag) not in self.word_tag_counts:
+                        self.word_tag_counts[(cur_word, cur_tag)] = 1
+                    else:
+                        self.word_tag_counts[(cur_word, cur_tag)] += 1
+
+                    # count tag pairs:
+                    if word_idx > 0:
+                        _, prev_tag = split_words[word_idx - 1]
+                    else:
+                        prev_tag = '*'
+                    if str([prev_tag, cur_tag]) not in self.tags_pairs_count:
+                        self.tags_pairs_count[str([prev_tag, cur_tag])] = 1
+                    else:
+                        self.tags_pairs_count[str([prev_tag, cur_tag])] += 1
+
+                    # count tag triplets
+                    if word_idx == 0:
+                        prev_prev_tag = '*'
+                        prev_tag = '*'
+                    elif word_idx == 1:
+                        prev_prev_tag = '*'
+                        _, prev_tag = split_words[word_idx - 1]
+                    else:
+                        _, prev_prev_tag = split_words[word_idx - 2]
+                        _, prev_tag = split_words[word_idx - 1]
+
+                    if str([prev_prev_tag, prev_tag, cur_tag]) not in self.tags_triplets_count:
+                        self.tags_triplets_count[str([prev_prev_tag, prev_tag, cur_tag])] = 1
+                    else:
+                        self.tags_triplets_count[str([prev_prev_tag, prev_tag, cur_tag])] += 1
+
+
+                    
                     if (cur_word, cur_tag) not in self.feature_rep_dict["f100"]:
                         self.feature_rep_dict["f100"][(cur_word, cur_tag)] = 1
                     else:
@@ -98,17 +136,15 @@ class FeatureStatistics:
                     else:
                         self.feature_rep_dict["f105"][cur_tag] = +1
 
-
                     # f106
-                    if word_idx==0:
+                    if word_idx == 0:
                         w_minus_1 = '*'
-                    elif word_idx>=1:
-                        w_minus_1, _ = split_words[word_idx-1].split('_')
-                    if (cur_tag,w_minus_1) not in self.feature_rep_dict["f106"]:
-                        self.feature_rep_dict["f106"][(cur_tag,w_minus_1)] = 1
+                    elif word_idx >= 1:
+                        w_minus_1, _ = split_words[word_idx - 1].split('_')
+                    if (cur_tag, w_minus_1) not in self.feature_rep_dict["f106"]:
+                        self.feature_rep_dict["f106"][(cur_tag, w_minus_1)] = 1
                     else:
-                        self.feature_rep_dict["f106"][(cur_tag,w_minus_1)] = +1
-
+                        self.feature_rep_dict["f106"][(cur_tag, w_minus_1)] = +1
 
                     # f107
                     if word_idx == len(split_words) - 1:
@@ -119,6 +155,23 @@ class FeatureStatistics:
                         self.feature_rep_dict["f107"][(w_plus_1, cur_tag)] = 1
                     else:
                         self.feature_rep_dict["f107"][(w_plus_1, cur_tag)] = +1
+
+                    # fdigits
+                    try:
+                        num = float(cur_word)
+                        if num not in self.feature_rep_dict["fdigits"]:
+                            self.feature_rep_dict["fdigits"][num] = 1
+                        else:
+                            self.feature_rep_dict["fdigits"][num] = +1
+                    except ValueError as e:
+                        pass
+
+                    # fcapital
+                    if any(ele.isupper() for ele in cur_word):
+                        if cur_word not in self.feature_rep_dict["fcapital"]:
+                            self.feature_rep_dict["fcapital"][cur_word] = 1
+                        else:
+                            self.feature_rep_dict["fcapital"][cur_word] = +1
 
                 sentence = [("*", "*"), ("*", "*")]
                 for pair in split_words:
@@ -154,6 +207,8 @@ class Feature2id:
             "f105": OrderedDict(),
             "f106": OrderedDict(),
             "f107": OrderedDict(),
+            "fdigits": OrderedDict(),
+            "fcapital": OrderedDict()
         }
         self.represent_input_with_features = OrderedDict()
         self.histories_matrix = OrderedDict()
@@ -250,6 +305,18 @@ def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[
     # f106
     if (c_tag, p_word) in dict_of_dicts["f106"]:
         features.append(dict_of_dicts["f106"][(c_tag, p_word)])
+
+    # f107
+    if (c_tag, n_word) in dict_of_dicts["f107"]:
+        features.append(dict_of_dicts["f107"][(c_tag, n_word)])
+
+    # fdigits
+    if c_word in dict_of_dicts["fdigits"]:
+        features.append(dict_of_dicts["fdigits"][c_word])
+
+    # fcapital
+    if c_word in dict_of_dicts["fcapital"]:
+        features.append(dict_of_dicts["fcapital"][c_word])
 
     return features
 
