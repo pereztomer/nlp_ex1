@@ -1,17 +1,31 @@
-from preprocessing import read_test
+import copy
+
+from preprocessing import read_test, represent_input_with_features
 from tqdm import tqdm
 
 
-
-def calculate_q(feature2id):
+def calculate_q(history, dict_of_dicts, pre_trained_weights, S):
     """
     A helper function for the memm_viterbi() function, which
     calculates the q parameter in every memm_viterbi() iteration.
     :return: q value (float)
     """
+    feature_indexes = represent_input_with_features(history, dict_of_dicts)
+    numerator_val = 0
+    for feature in feature_indexes:
+        numerator_val += pre_trained_weights[feature]
+    numerator = exp(numerator_val)
+    denominator = 0
+    denominator_history = copy.deepcopy(history)
+    denominator_vector_multy = 0
+    for tag in S:
+        denominator_history[1] = tag
+        denominator_feature_indexes = represent_input_with_features(denominator_history, dict_of_dicts)
+        for feature_denominator in denominator_feature_indexes:
+            denominator_vector_multy += pre_trained_weights[feature_denominator]
+        denominator += exp(denominator_vector_multy)
 
-    # TODO: Implement q calculation
-    return 0
+    return numerator / denominator
 
 
 def memm_viterbi(sentence, pre_trained_weights, feature2id):
@@ -22,40 +36,47 @@ def memm_viterbi(sentence, pre_trained_weights, feature2id):
     """
 
     n = len(sentence)
-    the_big_pi_table = [{} for _ in range(n)]
-    bp_table = [{} for _ in range(n)]
-    the_big_pi_table[0][str(['*', '*'])] = 1
-    S = feature2id.feature_statistics.tags
-    S_dict = {num: set() for num in range(-1, n)}
-    S_dict[-1] = S_dict[0] = {'*'}
+    the_big_pi_table = {i + 1: {} for i in range(n)}
+    bp_table = {i+1:{} for i in range(n)}
+    the_big_pi_table[1][('*', '*')] = 1
+    S = feature2id.feature_statistics.tags  # all tags in the train set
+
+    S_dict = {num: set() for num in range(0, n + 1)}
+    S_dict[0] = S_dict[1] = ['*']
+
     for key in S_dict:
-        if key > 0:
+        if key > 1:
             S_dict[key] = S.copy()
 
-    for index in range(1, n + 1):
+    for index in range(2, n + 1):
         for u in S_dict[index - 1]:
             for v in S_dict[index]:
                 # find max for t:
                 max_val = 0
                 argmax_tag = None
                 for t in S_dict[index - 2]:
-                    q = calculate_q(feature2id)
-                    # triplet_count = feature2id.feature_statistics.tags_triplets_count[str([t, u, v])]
-                    # pairs_count = feature2id.feature_statistics.tags_pairs_count[str([u, v])]
-                    # q = triplet_count / pairs_count
+                    # history  = tuple{c_word, c_tag, p_word, p_tag, pp_word, pp_tag, n_word}
+                    c_word = sentence[index]
+                    p_word = sentence[index - 1]
+                    pp_word = sentence[index - 2]
 
-                    # e = feature2id.feature_statistics.word_tag_counts[(v, sentence[index])] / \
-                    #     feature2id.feature_statistics.tags_counts[v]
-                    current_val = the_big_pi_table[index - 1][str([t, u])] * q
+                    c_tag = v
+                    p_tag = u
+                    pp_tag = t
+                    history = [c_word, c_tag, p_word, p_tag, pp_word, pp_tag, sentence[index + 1]]
+
+                    q = calculate_q(history, feature2id.feature_to_idx, pre_trained_weights, S)
+
+                    current_val = the_big_pi_table[index - 1][(t, u)] * q
                     if current_val > max_val:
                         max_val = current_val
                         argmax_tag = t
 
-                the_big_pi_table[index][str([u, v])] = max_val
-                bp_table[index][str([u, v])] = argmax_tag
+                the_big_pi_table[index][(u, v)] = max_val
+                bp_table[index][(u, v)] = argmax_tag
 
     # calculating t_n_minus_1, t_n
-    t_assignments = {x: None for x in range(1, n + 1)}
+    t_assignments = {x: None for x in range(2, n+1)}
     max_val = 0
     for u in S:
         for v in S:
@@ -68,8 +89,8 @@ def memm_viterbi(sentence, pre_trained_weights, feature2id):
                 t_assignments[n - 1] = u
                 t_assignments[n] = v
 
-    for k in range(n - 2, -1, 1):
-        t_assignments[k] = bp_table[k + 2][str([t_assignments[k + 1], t_assignments[k + 2]])]
+    for k in range(n - 2, -1, 2):
+        t_assignments[k] = bp_table[k + 2][(t_assignments[k + 1], t_assignments[k + 2])]
 
     return t_assignments
 
