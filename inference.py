@@ -2,6 +2,7 @@ from preprocessing import read_test
 from tqdm import tqdm
 
 
+
 def calculate_q(feature2id):
     """
     A helper function for the memm_viterbi() function, which
