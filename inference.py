@@ -187,7 +187,7 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
                     errors_dict[t] = 1
                 elif t in errors_dict:
                     errors_dict[t] += 1
-        top10_keys = {k: v for k, v in sorted(errors_dict.items(), key=lambda item: item[1])}.keys()
+        top10_keys = list({k: v for k, v in sorted(errors_dict.items(), key=lambda item: item[1])}.keys())[:10]
         top10_idx = [i for i, label in enumerate(labels) if label in top10_keys]
         print(top10_keys)
         top_10_cm = cm[top10_idx][:, top10_idx]

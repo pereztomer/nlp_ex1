@@ -15,7 +15,7 @@ def main():
 
     weights_path = f'{train_file}_weights.pkl'
     predictions_path = f'{test_file}_predictions.wtag'
-    #
+
     # statistics, feature2id = preprocess_train(train_path, threshold)
     # get_optimal_vector(statistics=statistics, feature2id=feature2id, weights_path=weights_path, lam=lam)
 
