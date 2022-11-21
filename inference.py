@@ -135,6 +135,21 @@ def score(actual, pred):
     return len(actual), hit
 
 
+# def custom_score_func(y_list, predictions, error_results_dict):
+#     assert len(y_list) == len(predictions)
+#     total_hits = 0
+#     for y, pred in zip(y_list, predictions):
+#         if y == pred:
+#             total_hits += 1
+#         else:
+#             if y not in error_results_dict:
+#                 error_results_dict[y] = 1
+#             else:
+#                 error_results_dict[y] += 1
+#
+#     return len(y_list), total_hits, error_results_dict
+
+
 def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
     tagged = "test" in test_path or "train1" in test_path or "train2" in test_path
     test = read_test(test_path, tagged=tagged)
@@ -148,6 +163,7 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
     y_true = []
     y_pred = []
 
+    error_results_dict = {}
     for k, sen in tqdm(enumerate(test), total=len(test)):
         sentence = sen[0]
 
@@ -159,6 +175,7 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
         y_true = y_true + actual
 
         if tagged:
+            # curr_words, curr_hits, error_results_dict = custom_score_func(actual, pred, error_results_dict)
             curr_words, curr_hits = score(actual, pred)
             total_words += curr_words
             hit_words += curr_hits
@@ -189,8 +206,9 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
                     errors_dict[t] = 1
                 elif t in errors_dict:
                     errors_dict[t] += 1
-        top10_keys = list({k: v for k, v in sorted(errors_dict.items(), key=lambda item: item[1])}.keys())[
-                     :min(len(errors_dict.keys()), 10)]
+
+        sorted_keys = list(reversed({k: v for k, v in sorted(errors_dict.items(), key=lambda item: item[1])}.keys()))
+        top10_keys = sorted_keys[:min(len(sorted_keys), 10)]
         top10_idx = [i for i, label in enumerate(labels) if label in top10_keys]
         print(top10_keys)
         top_10_cm = cm[top10_idx][:, top10_idx]
