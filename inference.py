@@ -158,11 +158,13 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
         actual = sen[1][2:-1]
         y_true = y_true + actual
 
-        curr_words, curr_hits = score(actual, pred)
-        total_words += curr_words
-        hit_words += curr_hits
-        if k % 10 == 0:
-            print(f'Accuracy for {total_words} words is: {hit_words / total_words:.3f}')
+        if tagged:
+            curr_words, curr_hits = score(actual, pred)
+            total_words += curr_words
+            hit_words += curr_hits
+            if k % 10 == 0:
+                print(f'Accuracy for {total_words} words is: {hit_words / total_words:.3f}')
+
         for i in range(len(pred)):
             if i > 0:
                 output_file.write(" ")
