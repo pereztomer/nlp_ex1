@@ -172,25 +172,26 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
 
     print(f'Accuracy for {total_words} words is: {hit_words / total_words:.3f}')
 
-    # confusion matrix
-    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    if tagged:
+        # confusion matrix
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
 
-    display = ConfusionMatrixDisplay(cm, display_labels=labels)
-    display.plot()
-    plt.savefig(f'{file_name}_full_confusion_matrix.png')
+        display = ConfusionMatrixDisplay(cm, display_labels=labels)
+        display.plot()
+        plt.savefig(f'{file_name}_full_confusion_matrix.png')
 
-    errors_dict = {}
-    for t, p in zip(y_true, y_pred):
-        if t != p:
-            if t not in errors_dict:
-                errors_dict[t] = 1
-            elif t in errors_dict:
-                errors_dict[t] += 1
-    top10_keys = {k: v for k, v in sorted(errors_dict.items(), key=lambda item: item[1])}.keys()
-    top10_idx = [i for i, label in enumerate(labels) if label in top10_keys]
-    print(top10_keys)
-    top_10_cm = cm[top10_idx][:, top10_idx]
+        errors_dict = {}
+        for t, p in zip(y_true, y_pred):
+            if t != p:
+                if t not in errors_dict:
+                    errors_dict[t] = 1
+                elif t in errors_dict:
+                    errors_dict[t] += 1
+        top10_keys = {k: v for k, v in sorted(errors_dict.items(), key=lambda item: item[1])}.keys()
+        top10_idx = [i for i, label in enumerate(labels) if label in top10_keys]
+        print(top10_keys)
+        top_10_cm = cm[top10_idx][:, top10_idx]
 
-    display = ConfusionMatrixDisplay(top_10_cm, display_labels=top10_keys)
-    display.plot()
-    plt.savefig(f'{file_name}_top_10_confusion_matrix.png')
+        display = ConfusionMatrixDisplay(top_10_cm, display_labels=top10_keys)
+        display.plot()
+        plt.savefig(f'{file_name}_top_10_confusion_matrix.png')
