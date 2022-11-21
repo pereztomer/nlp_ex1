@@ -1,4 +1,5 @@
 import copy
+from math import exp
 
 from preprocessing import read_test, represent_input_with_features
 from tqdm import tqdm
@@ -37,7 +38,7 @@ def memm_viterbi(sentence, pre_trained_weights, feature2id):
 
     n = len(sentence)
     the_big_pi_table = {i + 1: {} for i in range(n)}
-    bp_table = {i+1:{} for i in range(n)}
+    bp_table = {i + 1: {} for i in range(n)}
     the_big_pi_table[1][('*', '*')] = 1
     S = feature2id.feature_statistics.tags  # all tags in the train set
 
@@ -56,14 +57,20 @@ def memm_viterbi(sentence, pre_trained_weights, feature2id):
                 argmax_tag = None
                 for t in S_dict[index - 2]:
                     # history  = tuple{c_word, c_tag, p_word, p_tag, pp_word, pp_tag, n_word}
-                    c_word = sentence[index]
+                    try:
+                        c_word = sentence[index]
+                    except:
+                        continue
                     p_word = sentence[index - 1]
                     pp_word = sentence[index - 2]
 
                     c_tag = v
                     p_tag = u
                     pp_tag = t
-                    history = [c_word, c_tag, p_word, p_tag, pp_word, pp_tag, sentence[index + 1]]
+                    if index not in (n, n - 1):
+                        history = [c_word, c_tag, p_word, p_tag, pp_word, pp_tag, sentence[index + 1]]
+                    else:
+                        history = [c_word, c_tag, p_word, p_tag, pp_word, pp_tag, sentence[index]]
 
                     q = calculate_q(history, feature2id.feature_to_idx, pre_trained_weights, S)
 
@@ -75,23 +82,35 @@ def memm_viterbi(sentence, pre_trained_weights, feature2id):
                 the_big_pi_table[index][(u, v)] = max_val
                 bp_table[index][(u, v)] = argmax_tag
 
-    # calculating t_n_minus_1, t_n
     t_assignments = {x: None for x in range(2, n+1)}
     max_val = 0
+    argmax_val = None
     for u in S:
         for v in S:
+            current_pi_table_value = the_big_pi_table[n][(u, v)]
+            if current_pi_table_value > max_val:
+                max_val = current_pi_table_value
+                argmax_val = (u, v)
             # triplet_count = feature2id.feature_statistics.tags_triplets_count[str([u, v, '*'])]
             # pairs_count = feature2id.feature_statistics.tags_pairs_count[str([u, v])]
             # q = triplet_count / pairs_count
-            q = calculate_q(feature2id)
-            if max_val > the_big_pi_table[n][str([u, v])] * q:
-                max_val = the_big_pi_table[n][str([u, v])] * q
-                t_assignments[n - 1] = u
-                t_assignments[n] = v
+            # q = calculate_q(history, feature2id.feature_to_idx, pre_trained_weights, S)
+
+            # the_big_pi_table[n] -- This is a dict
+            # max(the_big_pi_table[n], key=the_big_pi_table[n].get)[0]
+            # bp_table[n][(u, v)]
+            t_assignments[n], t_assignments[n - 1] = v, u
+            # t_assignments[n], t_assignments[n - 1] = max(the_big_pi_table[n], key=the_big_pi_table[n].get)[0], \
+            #                                          max(the_big_pi_table[n], key=the_big_pi_table[n].get)[1]
+            # if max_val > the_big_pi_table[n][str([u, v])] * q:
+            #     max_val = the_big_pi_table[n][str([u, v])] * q
+            #     t_assignments[n - 1] = u
+            #     t_assignments[n] = v
 
     for k in range(n - 2, -1, 2):
         t_assignments[k] = bp_table[k + 2][(t_assignments[k + 1], t_assignments[k + 2])]
 
+    t_assignments = [val for val in t_assignments.values()]
     return t_assignments
 
 
