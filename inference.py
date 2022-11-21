@@ -1,32 +1,43 @@
-import copy
-from math import exp
-
-from preprocessing import read_test, represent_input_with_features
 from tqdm import tqdm
+import numpy as np
+from itertools import product
+from preprocessing import read_test
+from collections import OrderedDict, defaultdict
+from preprocessing import represent_input_with_features
+from sklearn.metrics import confusion_matrix
 
 
-def calculate_q(history, dict_of_dicts, pre_trained_weights, S):
-    """
-    A helper function for the memm_viterbi() function, which
-    calculates the q parameter in every memm_viterbi() iteration.
-    :return: q value (float)
-    """
-    feature_indexes = represent_input_with_features(history, dict_of_dicts)
-    numerator_val = 0
-    for feature in feature_indexes:
-        numerator_val += pre_trained_weights[feature]
-    numerator = exp(numerator_val)
-    denominator = 0
-    denominator_history = copy.deepcopy(history)
-    denominator_vector_multy = 0
-    for tag in S:
-        denominator_history[1] = tag
-        denominator_feature_indexes = represent_input_with_features(denominator_history, dict_of_dicts)
-        for feature_denominator in denominator_feature_indexes:
-            denominator_vector_multy += pre_trained_weights[feature_denominator]
-        denominator += exp(denominator_vector_multy)
+def build_history(sentence, k, pp_tag, p_tag, c_tag):
+    c_word = sentence[k]
+    p_word = sentence[k - 1]
+    pp_word = sentence[k - 2]
+    n_word = sentence[k + 1]
 
-    return numerator / denominator
+    h = (
+        c_word,
+        c_tag,
+        p_word,
+        p_tag,
+        pp_word,
+        pp_tag,
+        n_word
+    )
+    return h
+
+
+def calc_exp_val(pre_trained_weights, h, feature2id):
+    features = represent_input_with_features(h, feature2id.feature_to_idx)
+    return np.exp(np.sum(pre_trained_weights[features]))
+
+
+def last_tags_pair(pi_dict):
+    max_val = -1
+    max_pair = None
+    for pair, value in pi_dict.items():
+        if value > max_val:
+            max_val = value
+            max_pair = pair
+    return max_pair
 
 
 def memm_viterbi(sentence, pre_trained_weights, feature2id):
@@ -35,83 +46,92 @@ def memm_viterbi(sentence, pre_trained_weights, feature2id):
     You can implement Beam Search to improve runtime
     Implement q efficiently (refer to conditional probability definition in MEMM slides)
     """
-
     n = len(sentence)
-    the_big_pi_table = {i + 1: {} for i in range(n)}
-    bp_table = {i + 1: {} for i in range(n)}
-    the_big_pi_table[1][('*', '*')] = 1
-    S = feature2id.feature_statistics.tags  # all tags in the train set
+    tags = list(feature2id.feature_statistics.tags.copy())
+    tags_pairs = list(product(tags, repeat=2))
 
-    S_dict = {num: set() for num in range(0, n + 1)}
-    S_dict[0] = S_dict[1] = ['*']
+    # Initial pi tables
+    pi_dicts = {1: {p: 0 for p in tags_pairs}}
+    pi_dicts[1][('*', '*')] = 1
 
-    for key in S_dict:
-        if key > 1:
-            S_dict[key] = S.copy()
+    # initial bp tables
+    bp_dicts = {}
 
-    for index in range(2, n + 1):
-        for u in S_dict[index - 1]:
-            for v in S_dict[index]:
-                # find max for t:
-                max_val = 0
-                argmax_tag = None
-                for t in S_dict[index - 2]:
-                    # history  = tuple{c_word, c_tag, p_word, p_tag, pp_word, pp_tag, n_word}
-                    try:
-                        c_word = sentence[index]
-                    except:
-                        continue
-                    p_word = sentence[index - 1]
-                    pp_word = sentence[index - 2]
+    # initial q
+    q = OrderedDict()
 
-                    c_tag = v
-                    p_tag = u
-                    pp_tag = t
-                    if index not in (n, n - 1):
-                        history = [c_word, c_tag, p_word, p_tag, pp_word, pp_tag, sentence[index + 1]]
-                    else:
-                        history = [c_word, c_tag, p_word, p_tag, pp_word, pp_tag, sentence[index]]
+    for k in range(2, n - 1):
+        pi_dicts[k] = OrderedDict()
+        bp_dicts[k] = OrderedDict()
 
-                    q = calculate_q(history, feature2id.feature_to_idx, pre_trained_weights, S)
+        if k == 2:
+            s_minus_1 = ['*']
+            s_minus_2 = ['*']
+            s = tags
 
-                    current_val = the_big_pi_table[index - 1][(t, u)] * q
-                    if current_val > max_val:
-                        max_val = current_val
-                        argmax_tag = t
+        elif k == 3:
+            s_minus_1 = tags
+            s_minus_2 = ['*']
+            s = tags
 
-                the_big_pi_table[index][(u, v)] = max_val
-                bp_table[index][(u, v)] = argmax_tag
+        else:
+            s_minus_1 = tags
+            s_minus_2 = tags
+            s = tags
 
-    t_assignments = {x: None for x in range(2, n+1)}
-    max_val = 0
-    argmax_val = None
-    for u in S:
-        for v in S:
-            current_pi_table_value = the_big_pi_table[n][(u, v)]
-            if current_pi_table_value > max_val:
-                max_val = current_pi_table_value
-                argmax_val = (u, v)
-            # triplet_count = feature2id.feature_statistics.tags_triplets_count[str([u, v, '*'])]
-            # pairs_count = feature2id.feature_statistics.tags_pairs_count[str([u, v])]
-            # q = triplet_count / pairs_count
-            # q = calculate_q(history, feature2id.feature_to_idx, pre_trained_weights, S)
+        for u, v in product(s_minus_1, s):
 
-            # the_big_pi_table[n] -- This is a dict
-            # max(the_big_pi_table[n], key=the_big_pi_table[n].get)[0]
-            # bp_table[n][(u, v)]
-            t_assignments[n], t_assignments[n - 1] = v, u
-            # t_assignments[n], t_assignments[n - 1] = max(the_big_pi_table[n], key=the_big_pi_table[n].get)[0], \
-            #                                          max(the_big_pi_table[n], key=the_big_pi_table[n].get)[1]
-            # if max_val > the_big_pi_table[n][str([u, v])] * q:
-            #     max_val = the_big_pi_table[n][str([u, v])] * q
-            #     t_assignments[n - 1] = u
-            #     t_assignments[n] = v
+            # future elements to place in pi(k, u, v)
+            max_probability = -1
+            best_tag = None
 
-    for k in range(n - 2, -1, 2):
-        t_assignments[k] = bp_table[k + 2][(t_assignments[k + 1], t_assignments[k + 2])]
+            width = 5
+            if len(s_minus_2) >= 5:
+                beam_probs = [pi_dicts[k - 1][t, u] for t in s_minus_2]
+                beam_probs_indexes = np.argpartition(beam_probs, kth=(len(beam_probs) - width))[-width:]
+                s_minus_2 = np.array(s_minus_2)[beam_probs_indexes]
 
-    t_assignments = [val for val in t_assignments.values()]
-    return t_assignments
+            # searching for the max and argmax
+            for t in s_minus_2:
+
+                h = build_history(sentence=sentence, k=k, pp_tag=t, p_tag=u, c_tag=v)
+                if h not in q:
+                    softmax_denominator = 0
+                    for sm_t in tags:
+                        curr_h = build_history(sentence=sentence, k=k, pp_tag=t, p_tag=u, c_tag=sm_t)
+                        sm_t_exp_val = calc_exp_val(pre_trained_weights, curr_h, feature2id)
+                        softmax_denominator += sm_t_exp_val
+                        q[curr_h] = sm_t_exp_val
+
+                    for sm_t in tags:
+                        curr_h = build_history(sentence=sentence, k=k, pp_tag=t, p_tag=u, c_tag=sm_t)
+                        q[curr_h] /= softmax_denominator
+
+                prob_t_val = pi_dicts[k - 1][t, u] * q[h]
+                if prob_t_val > max_probability:
+                    max_probability = prob_t_val
+                    best_tag = t
+
+            # update k, u, v table
+            pi_dicts[k][u, v] = max_probability
+            bp_dicts[k][u, v] = best_tag
+
+    tag_n_minus_1, tag_n = last_tags_pair(pi_dict=pi_dicts[n - 2])
+    pred = [tag_n, tag_n_minus_1]
+
+    for k in reversed(range(2, n - 3)):
+        next_tag = (bp_dicts[k + 2])[pred[-1], pred[-2]]
+        pred.append(next_tag)
+
+    return ["*"] + list(reversed(pred))
+
+
+def score(actual, pred):
+    assert len(actual) == len(pred), \
+        "Actual sentence and prediction POS do not have same length!"
+    hit = len([1 for y, y_t in zip(actual, pred) if y == y_t])
+
+    return len(actual), hit
 
 
 def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
@@ -120,13 +140,42 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
 
     output_file = open(predictions_path, "a+")
 
+    total_words, hit_words = 0, 0
+
+    labels = list(feature2id.feature_statistics.tags)
+    y_true = []
+    y_pred = []
+
     for k, sen in tqdm(enumerate(test), total=len(test)):
         sentence = sen[0]
+
         pred = memm_viterbi(sentence, pre_trained_weights, feature2id)[1:]
+        y_pred = y_pred + pred
+
         sentence = sentence[2:]
+        actual = sen[1][2:-1]
+        y_true = y_true + actual
+
+        curr_words, curr_hits = score(actual, pred)
+        total_words += curr_words
+        hit_words += curr_hits
+        print("Accuracy so far:", hit_words / total_words)
+
         for i in range(len(pred)):
             if i > 0:
                 output_file.write(" ")
             output_file.write(f"{sentence[i]}_{pred[i]}")
         output_file.write("\n")
     output_file.close()
+    print("Final Accuracy:", hit_words / total_words)
+
+    # confusion matrix
+    cm = confusion_matrix(y_true, y_pred, labels=labels)
+    errors_dict = defaultdict(lambda x: 0)
+    for t, p in zip(y_true, y_pred):
+        if t != p:
+            errors_dict[t] += 1
+    top10_keys = {k: v for k, v in sorted(errors_dict.items(), key=lambda item: item[1])}.keys()
+    top10_idx = [i for i, label in enumerate(labels) if label in top10_keys]
+    print(top10_keys)
+    print(cm[top10_idx: top10_idx])
