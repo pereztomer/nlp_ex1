@@ -48,10 +48,10 @@ def memm_viterbi(sentence, pre_trained_weights, feature2id):
     """
     n = len(sentence)
     tags = list(feature2id.feature_statistics.tags.copy())
-    tags_pairs = list(product(tags, repeat=2))
+    tag_pairs = list(product(tags, repeat=2))
 
     # Initial pi tables
-    pi_dicts = {1: {p: 0 for p in tags_pairs}}
+    pi_dicts = {1: {i: 0 for i in tag_pairs}}
     pi_dicts[1][('*', '*')] = 1
 
     # initial bp tables

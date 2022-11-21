@@ -54,5 +54,8 @@ def get_optimal_vector(statistics: FeatureStatistics, feature2id: Feature2id, la
                                    iprint=10,
                                    epsilon=1e-7,
                                    bounds=None)
+
+    # Check if weight file already exists. If do,
+
     with open(weights_path, 'wb+') as f:
         pickle.dump((optimal_params, feature2id), f)
