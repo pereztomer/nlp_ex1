@@ -50,7 +50,7 @@ def get_optimal_vector(statistics: FeatureStatistics, feature2id: Feature2id, la
     optimal_params = fmin_l_bfgs_b(func=calc_objective_per_iter,
                                    x0=w_0,
                                    args=args,
-                                   maxiter=2,
+                                   maxiter=750,
                                    iprint=10,
                                    epsilon=1e-7,
                                    bounds=None)
