@@ -8,14 +8,16 @@ def main():
     threshold = 1
     lam = 1
 
-    train_path = "data/train1.wtag"
-    test_path = "data/train1.wtag"
+    train_file = 'train2.wtag'
+    test_file = 'comp2.words'
+    train_path = f'data/{train_file}'
+    test_path = f'data/{test_file}'
 
-    weights_path = 'weights.pkl'
-    predictions_path = 'train_1_predictions.wtag'
+    weights_path = f'{train_file}_weights.pkl'
+    predictions_path = f'{test_file}_predictions.wtag'
 
-    # statistics, feature2id = preprocess_train(train_path, threshold)
-    # get_optimal_vector(statistics=statistics, feature2id=feature2id, weights_path=weights_path, lam=lam)
+    statistics, feature2id = preprocess_train(train_path, threshold)
+    get_optimal_vector(statistics=statistics, feature2id=feature2id, weights_path=weights_path, lam=lam)
 
     with open(weights_path, 'rb') as f:
         optimal_params, feature2id = pickle.load(f)

@@ -136,8 +136,7 @@ def score(actual, pred):
 
 
 def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
-    tagged = "test" in test_path or "train1" in test_path or  "train2" in test_path
-    # tagged = "test" in test_path
+    tagged = "test" in test_path or "train1" in test_path or "train2" in test_path
     test = read_test(test_path, tagged=tagged)
     file_name = test_path.split('.')[0]
 
@@ -195,4 +194,3 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
     display = ConfusionMatrixDisplay(top_10_cm, display_labels=top10_keys)
     display.plot()
     plt.savefig(f'{file_name}_top_10_confusion_matrix.png')
-
