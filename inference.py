@@ -2,7 +2,7 @@ from tqdm import tqdm
 import numpy as np
 from itertools import product
 from preprocessing import read_test
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 from preprocessing import represent_input_with_features
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import matplotlib.pyplot as plt
@@ -136,8 +136,10 @@ def score(actual, pred):
 
 
 def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
-    tagged = "test" in test_path
+    tagged = "test" in test_path or "train1" in test_path or  "train2" in test_path
+    # tagged = "test" in test_path
     test = read_test(test_path, tagged=tagged)
+    file_name = test_path.split('.')[0]
 
     output_file = open(predictions_path, "a+")
 
@@ -160,23 +162,37 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
         curr_words, curr_hits = score(actual, pred)
         total_words += curr_words
         hit_words += curr_hits
-        print("Accuracy so far:", hit_words / total_words)
-
+        if k % 10 == 0:
+            print(f'Accuracy for {total_words} words is: {hit_words / total_words:.3f}')
         for i in range(len(pred)):
             if i > 0:
                 output_file.write(" ")
             output_file.write(f"{sentence[i]}_{pred[i]}")
         output_file.write("\n")
     output_file.close()
-    print("Final Accuracy:", hit_words / total_words)
+
+    print(f'Accuracy for {total_words} words is: {hit_words / total_words:.3f}')
 
     # confusion matrix
     cm = confusion_matrix(y_true, y_pred, labels=labels)
-    errors_dict = defaultdict(lambda x: 0)
+
+    display = ConfusionMatrixDisplay(cm, display_labels=labels)
+    display.plot()
+    plt.savefig(f'{file_name}_full_confusion_matrix.png')
+
+    errors_dict = {}
     for t, p in zip(y_true, y_pred):
         if t != p:
-            errors_dict[t] += 1
+            if t not in errors_dict:
+                errors_dict[t] = 1
+            elif t in errors_dict:
+                errors_dict[t] += 1
     top10_keys = {k: v for k, v in sorted(errors_dict.items(), key=lambda item: item[1])}.keys()
     top10_idx = [i for i, label in enumerate(labels) if label in top10_keys]
     print(top10_keys)
-    print(cm[top10_idx][:,top10_idx])
+    top_10_cm = cm[top10_idx][:, top10_idx]
+
+    display = ConfusionMatrixDisplay(top_10_cm, display_labels=top10_keys)
+    display.plot()
+    plt.savefig(f'{file_name}_top_10_confusion_matrix.png')
+

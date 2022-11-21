@@ -25,8 +25,6 @@ class FeatureStatistics:
         self.words_count = defaultdict(int)  # a dictionary with the number of times each word appeared in the text
         self.histories = []  # a list of all the histories seen at the test
         self.word_tag_counts = {}
-        # self.tags_pairs_count = {}
-        # self.tags_triplets_count = {}
 
     def get_word_tag_pair_count(self, file_path) -> None:
         """
@@ -50,32 +48,6 @@ class FeatureStatistics:
                         self.word_tag_counts[(cur_word, cur_tag)] = 1
                     else:
                         self.word_tag_counts[(cur_word, cur_tag)] += 1
-
-                    # count tag pairs:
-                    # if word_idx > 0:
-                    #     _, prev_tag = split_words[word_idx - 1].split('_')
-                    # else:
-                    #     prev_tag = '*'
-                    # if str([prev_tag, cur_tag]) not in self.tags_pairs_count:
-                    #     self.tags_pairs_count[str([prev_tag, cur_tag])] = 1
-                    # else:
-                    #     self.tags_pairs_count[str([prev_tag, cur_tag])] += 1
-
-                    # count tag triplets
-                    # if word_idx == 0:
-                    #     prev_prev_tag = '*'
-                    #     prev_tag = '*'
-                    # elif word_idx == 1:
-                    #     prev_prev_tag = '*'
-                    #     _, prev_tag = split_words[word_idx - 1].split('_')
-                    # else:
-                    #     _, prev_prev_tag = split_words[word_idx - 2].split('_')
-                    #     _, prev_tag = split_words[word_idx - 1].split('_')
-
-                    # if str([prev_prev_tag, prev_tag, cur_tag]) not in self.tags_triplets_count:
-                    #     self.tags_triplets_count[str([prev_prev_tag, prev_tag, cur_tag])] = 1
-                    # else:
-                    #     self.tags_triplets_count[str([prev_prev_tag, prev_tag, cur_tag])] += 1
 
                     if (cur_word, cur_tag) not in self.feature_rep_dict["f100"]:
                         self.feature_rep_dict["f100"][(cur_word, cur_tag)] = 1
@@ -299,8 +271,7 @@ def represent_input_with_features(history: Tuple, dict_of_dicts: Dict[str, Dict[
         @param dict_of_dicts: a dictionary of each feature and the index it was given
         @return a list with all features that are relevant to the given history
     """
-    c_word = history[0]
-    c_tag = history[1]
+
     features = []
 
     c_word, c_tag, p_word, p_tag, pp_word, pp_tag, n_word = history
