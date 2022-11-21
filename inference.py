@@ -4,7 +4,8 @@ from itertools import product
 from preprocessing import read_test
 from collections import OrderedDict, defaultdict
 from preprocessing import represent_input_with_features
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
+import matplotlib.pyplot as plt
 
 
 def build_history(sentence, k, pp_tag, p_tag, c_tag):
@@ -178,4 +179,4 @@ def tag_all_test(test_path, pre_trained_weights, feature2id, predictions_path):
     top10_keys = {k: v for k, v in sorted(errors_dict.items(), key=lambda item: item[1])}.keys()
     top10_idx = [i for i, label in enumerate(labels) if label in top10_keys]
     print(top10_keys)
-    print(cm[top10_idx: top10_idx])
+    print(cm[top10_idx][:,top10_idx])
