@@ -60,7 +60,7 @@ class FeatureStatistics:
                         if (s, cur_tag) not in self.feature_rep_dict["f101"]:
                             self.feature_rep_dict["f101"][(s, cur_tag)] = 1
                         else:
-                            self.feature_rep_dict["f101"][(s, cur_tag)] = +1
+                            self.feature_rep_dict["f101"][(s, cur_tag)] += 1
 
                     # f102
                     prefixes = [cur_word[:num] for num in range(1, min(4, len(cur_word)) + 1)]
@@ -68,7 +68,7 @@ class FeatureStatistics:
                         if (p, cur_tag) not in self.feature_rep_dict["f102"]:
                             self.feature_rep_dict["f102"][(p, cur_tag)] = 1
                         else:
-                            self.feature_rep_dict["f102"][(p, cur_tag)] = +1
+                            self.feature_rep_dict["f102"][(p, cur_tag)] += 1
 
                     # f103
                     if word_idx == 0:
@@ -86,7 +86,7 @@ class FeatureStatistics:
                     if (t, t_minus_1, t_minus_2) not in self.feature_rep_dict["f103"]:
                         self.feature_rep_dict["f103"][(t, t_minus_1, t_minus_2)] = 1
                     else:
-                        self.feature_rep_dict["f103"][(t, t_minus_1, t_minus_2)] = +1
+                        self.feature_rep_dict["f103"][(t, t_minus_1, t_minus_2)] += 1
 
                     # f104
                     if word_idx == 0:
@@ -98,13 +98,13 @@ class FeatureStatistics:
                     if (t, t_minus_1) not in self.feature_rep_dict["f104"]:
                         self.feature_rep_dict["f104"][(t, t_minus_1)] = 1
                     else:
-                        self.feature_rep_dict["f104"][(t, t_minus_1)] = +1
+                        self.feature_rep_dict["f104"][(t, t_minus_1)] += 1
 
                     # f105
                     if cur_tag not in self.feature_rep_dict["f105"]:
                         self.feature_rep_dict["f105"][cur_tag] = 1
                     else:
-                        self.feature_rep_dict["f105"][cur_tag] = +1
+                        self.feature_rep_dict["f105"][cur_tag] += 1
 
                     # f106
                     if word_idx == 0:
@@ -114,7 +114,7 @@ class FeatureStatistics:
                     if (cur_tag, w_minus_1) not in self.feature_rep_dict["f106"]:
                         self.feature_rep_dict["f106"][(cur_tag, w_minus_1)] = 1
                     else:
-                        self.feature_rep_dict["f106"][(cur_tag, w_minus_1)] = +1
+                        self.feature_rep_dict["f106"][(cur_tag, w_minus_1)] += 1
 
                     # f107
                     if word_idx == len(split_words) - 1:
@@ -124,7 +124,7 @@ class FeatureStatistics:
                     if (w_plus_1, cur_tag) not in self.feature_rep_dict["f107"]:
                         self.feature_rep_dict["f107"][(w_plus_1, cur_tag)] = 1
                     else:
-                        self.feature_rep_dict["f107"][(w_plus_1, cur_tag)] = +1
+                        self.feature_rep_dict["f107"][(w_plus_1, cur_tag)] += 1
 
                     # fdigits
                     try:
@@ -132,7 +132,7 @@ class FeatureStatistics:
                         if num not in self.feature_rep_dict["fdigits"]:
                             self.feature_rep_dict["fdigits"][num] = 1
                         else:
-                            self.feature_rep_dict["fdigits"][num] = +1
+                            self.feature_rep_dict["fdigits"][num] += 1
                     except ValueError as e:
                         pass
 
@@ -141,7 +141,7 @@ class FeatureStatistics:
                         if cur_word not in self.feature_rep_dict["fcapital"]:
                             self.feature_rep_dict["fcapital"][cur_word] = 1
                         else:
-                            self.feature_rep_dict["fcapital"][cur_word] = +1
+                            self.feature_rep_dict["fcapital"][cur_word] += 1
 
                     # trying more features: all capitals, any digits, word length, alllowercase
                     # fallcapitals
@@ -149,27 +149,27 @@ class FeatureStatistics:
                         if cur_word not in self.feature_rep_dict["fallcapitals"]:
                             self.feature_rep_dict["fallcapitals"][cur_word] = 1
                         else:
-                            self.feature_rep_dict["fallcapitals"][cur_word] = +1
+                            self.feature_rep_dict["fallcapitals"][cur_word] += 1
 
                     #fanydigits
                     if any(ele.isdigit() for ele in cur_word):
                         if cur_word not in self.feature_rep_dict["fanydigits"]:
                             self.feature_rep_dict["fanydigits"][cur_word] = 1
                         else:
-                            self.feature_rep_dict["fanydigits"][cur_word] = +1
+                            self.feature_rep_dict["fanydigits"][cur_word] += 1
 
                     #fwordlength
                     if (cur_word, len(cur_word)) not in self.feature_rep_dict["fwordlength"]:
                         self.feature_rep_dict["fwordlength"][(cur_word, len(cur_word))] = 1
                     else:
-                        self.feature_rep_dict["fwordlength"][(cur_word, len(cur_word))] = +1
+                        self.feature_rep_dict["fwordlength"][(cur_word, len(cur_word))] += 1
 
                     #flowercase
                     if all(ele.islower() for ele in cur_word):
                         if cur_word not in self.feature_rep_dict["flowercase"]:
                             self.feature_rep_dict["flowercase"][cur_word] = 1
                         else:
-                            self.feature_rep_dict["flowercase"][cur_word] = +1
+                            self.feature_rep_dict["flowercase"][cur_word] += 1
 
                 sentence = [("*", "*"), ("*", "*")]
                 for pair in split_words:
